@@ -17,4 +17,5 @@ steps:
   workingDirectory: src
   displayName: 'dotnet build $(buildConfiguration)'
 - script: dotnet test --configuration $(buildConfiguration)
+  workingDirectory: src
   displayName: 'dotnet test $(buildConfiguration)'
