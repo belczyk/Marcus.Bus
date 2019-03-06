@@ -13,7 +13,30 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-- script: dotnet build --configuration $(buildConfiguration)
+- script: dotnet clean Marcus.sln
+  displayName: 'dotnet clean'
+
+- script: dotnet restore Marcus.sln
+  displayName: 'dotnet restore'
+
+
+- script: dotnet build Marcus.sln --configuration $(buildConfiguration)  --no-restore 
   displayName: 'dotnet build $(buildConfiguration)'
-- script: dotnet test --configuration $(buildConfiguration)
+- script: dotnet test Marcus.sln --configuration $(buildConfiguration)  --no-restore --no-build
   displayName: 'dotnet test $(buildConfiguration)'
+
+  
+# - script: dotnet publish Nubings.WebAPI\Nubings.WebAPI.csproj --configuration $(buildConfiguration) --output $(build.artifactstagingdirectory)\package --no-build --no-restore
+#   displayName: 'dotnet publish $(buildConfiguration)'
+
+# - task: ArchiveFiles@2
+#   inputs:
+#     rootFolderOrFile: '$(build.artifactstagingdirectory)\package' 
+#     includeRootFolder: false 
+#     archiveType: 'zip' # Options: zip, 7z, tar, wim
+#     archiveFile: '$(Build.ArtifactStagingDirectory)\package.zip' 
+
+# - task: PublishBuildArtifacts@1
+#   inputs:
+#     pathtoPublish: '$(Build.ArtifactStagingDirectory)\package.zip'
+#     artifactName: build
