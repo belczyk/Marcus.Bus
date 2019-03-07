@@ -11,7 +11,7 @@ trigger:
 
 pool:
   vmImage: 'vs2017-win2016'
-  
+
 variables:
   buildConfiguration: 'Release'
 
@@ -23,7 +23,6 @@ steps:
 - script: dotnet restore Marcus.sln
   workingDirectory: src
   displayName: 'dotnet restore'
-
 
 - script: dotnet build Marcus.sln --configuration $(buildConfiguration)  --no-restore 
   workingDirectory: src
