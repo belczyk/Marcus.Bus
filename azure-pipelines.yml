@@ -7,8 +7,11 @@ name: '$(BuildID)'
 trigger:
 - master
 
-pool: 'Default' 
+# pool: 'Default' 
 
+pool:
+  vmImage: 'vs2017-win2016'
+  
 variables:
   buildConfiguration: 'Release'
 
