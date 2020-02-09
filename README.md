@@ -21,7 +21,7 @@ Some of the invariants:
 
 When in-memory bus is not-enough?
 
-`If you just ordered dual AMD Epyc 128 Cores / 256 Threads  server (which at the time of writing is most performant single node server you can buy) then it's time to think about distributed systems. Otherwise you brake first three rules of deciding if you need distributed system (which are: 1. don't. 2. don't 3. don't).`
+`If you just ordered dual AMD Epyc 64 Cores/128 Threads (128C/256T in total) server (which at the time of writing is most performant single node server you can buy) then it's time to think about distributed systems. Otherwise you brake first three rules of deciding if you need distributed system (which are: 1. don't. 2. don't 3. don't).`
 
 
 Marcus.Bus is split into two assemblies. Marcus.Bus.Abstractions which contains all base interfaces and base classes and Marcus.Bus which contains implementation and all required infrastructure code. Web project (ASP.net core) will reference Marcus.Bus and assemblies containing commands, events and handlers will reference Marcus.Bus.Abstractions.
