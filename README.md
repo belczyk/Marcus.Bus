@@ -1,6 +1,9 @@
+### Disclimer
+*If you need in-memory bus for asp.net core please consider [MediatR](https://github.com/jbogard/MediatR). They have different nomenclature (Request\Response instead of Queries and Notification instead of Commands\Events) but they additionally support synchronous flows and async flows with cancellation tokens. Many more project use MediatR and they have an 'existing' community support.*
+
 # Marcus.Bus
 
-**Highly opinionated**, asynchronous, in-memory, event bus for aps.net core with support for CQRS and EventSourcing.
+**Highly opinionated**, asynchronous, in-memory, event bus for aps.net core with support for CQRS and EventSourcing (or rather Command sourcing).
 
 Extracted from code base of a production system which runs on it since 2016.
 
@@ -16,8 +19,12 @@ Some of the invariants:
 * each published event has either source command or source event (each execution path can be traced from command/event store)
 * bus uses .net async/await functionality to increase throughput
 
+When in-memory bus is not-enough?
 
-Marcus.Bus is splitted into two assemblies. Marcus.Bus.Abstractions which contains all base interfaces and base classes and Marcus.Bus which contains implementation and all required infrastructure code. Web project (ASP.net core) will reference Marcus.Bus and assemblies containing commands, events and handlers will reference Marcus.Bus.Abstractions.
+`If you just ordered dual AMD Epyc 128 Cores / 256 Threads  server (which at the time of writing is most performant single node server you can buy) then it's time to think about distributed systems. Otherwise you brake first three rules of deciding if you need distributed system (which are: 1. don't. 2. don't 3. don't).`
+
+
+Marcus.Bus is split into two assemblies. Marcus.Bus.Abstractions which contains all base interfaces and base classes and Marcus.Bus which contains implementation and all required infrastructure code. Web project (ASP.net core) will reference Marcus.Bus and assemblies containing commands, events and handlers will reference Marcus.Bus.Abstractions.
 
 Below is main bus interface. It provides means to dispatch commands, publish events and execute queries. This is the interface used in actions/endpoints.
 
@@ -102,8 +109,86 @@ public class RepairHandler : IHandler
 ```
 
 ## Events and Event Handlers 
+Events must inherit from `Event` base class. 
+|Property                            |Description                         |
+|------------------------------------|------------------------------------|
+|`Guid EventId`|Unique event id.|
+|`string RequestId`|String identifier of the request in which command has been dispatched.|
+|`string SessionId`|String identifier of the session. We generate unique session id every time user logs into the system.|
+|`Guid TenantId`|Tenant identifier. |
+|`Guid PublishedBy`|User identifier (user which initiated event).|
+|`DateTime PublishedUTC`|UTC date and time.|
+|`DateTime SourceCommandId`| If event has been published by command handler this property must be set to command id of handled command. |
+|`DateTime SourceEventId`| If event has been published by event handler this property must be set to event id of handled event. |
+
+Event handlers must be in a type implementing marker interface ``IHandler``.
+
+Event handler method must be public, return `Task` and have one argument, handled event.
+
+An example of event handler: 
+```csharp
+public class TransactionHandler : IHandler
+{
+// ...
+    public async Task Handle(AccountUpdatedEvent @event)
+    {
+        // ...
+    }
+
+// ...
+}
+```
+
+Examples of publishing events:
+
+```csharp
+// publish from command handler
+await Bus.Publish(new RepairUpdatedEvent(...), command);
+// publish from event handler
+await Bus.Publish(new AccountBalanceUpdatedEvent(...), @event);
+```
+## Queries and Queries Handlers
+All queries must inherit from `Query<T>` class where `T` is query return type.
+
+
+Queries handler class must implement marker interface `IHandler`. 
+
+Query handler method must return   `Task<T>` and take one argument of `Query<T>` type. 
+
+Example queries handler: 
+```csharp
+public class RepairQueriesHandler : IHandler
+{
+    // ...
+
+    public async Task<IList<Repair>> Handle(RepairsQuery query)
+    {
+        // ...
+    }
+}
+
+```
+
+Example use of queries: 
+```csharp
+var repairs = await Bus.Execute(new RepairsQuery());
+```
 
 ## Tracking 
+Because each execution flow starts with `Command` and each `Event` *knows* from which command/event handler it has been published we can easily build a tracking tool showing what exactly happens in the system.
 
+In many cases you can find solution for bugs just by looking at Command/Event stream.
+
+![Tracking tool](docs/images/commands-events-tracking.png)
 
 ## Metrics
+Marcus Bus is reporting number of metrics. It helps you to quickly find bottle necks in your system. We save metrics to SQL database and use special query to calculate percentile statistics for different metrics. Based on that we know exactly which queries/commands must be optimized. We decorate all metrics with `TenantId`, `SessionId` and `RequestId` which helps us in debugging and also helps asses how big working data set was for given metric.
+
+Among others: 
+* Total time of processing execution flow (starting from command to last event)
+* Time of command handling
+* Time of event handling 
+* Time of query execution
+* Time of command/event persisting 
+
+ 
