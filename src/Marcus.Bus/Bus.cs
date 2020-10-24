@@ -83,7 +83,7 @@ namespace Marcus.Bus
             {
                 if (command == null) throw new CommandCannotBeNullException(typeof(T).Name);
 
-                if (command.PublishedUTC != default(DateTime))
+                if (command.PublishedUTC != default)
                     Time.OverrideTime(command.PublishedUTC);
 
 
@@ -102,7 +102,7 @@ namespace Marcus.Bus
                     await Registry.GetCommandHandler(commandKey).Handle(command, ServiceProvider);
                     metric.Stop();
 
-                    await PersitEvents();
+                    await PersistEvents();
                 }
                 catch (TargetInvocationException ex)
                 {
@@ -116,7 +116,7 @@ namespace Marcus.Bus
                 }
                 finally
                 {
-                    await PersitEvents();
+                    await PersistEvents();
                 }
             }
             finally
@@ -125,7 +125,7 @@ namespace Marcus.Bus
             }
         }
 
-        private async Task PersitEvents()
+        private async Task PersistEvents()
         {
             await CommandsEventsStore.PersistEvents(Events);
             Events.Clear();
@@ -176,15 +176,14 @@ namespace Marcus.Bus
 
         protected void SetCorrelationProperties(Command command)
         {
-            if (command.RequestId == null)
-                command.RequestId = SessionAccessor.RequestId;
-            if (command.SessionId == null)
-                command.SessionId = SessionAccessor.SessionId;
-            if (command.TenantId == default(Guid))
+            command.RequestId ??= SessionAccessor.RequestId;
+            command.SessionId ??= SessionAccessor.SessionId;
+
+            if (command.TenantId == default)
                 command.TenantId = SessionAccessor.TenantId;
-            if (command.PublishedBy == default(Guid))
+            if (command.PublishedBy == default)
                 command.PublishedBy = SessionAccessor.UserId;
-            if (command.PublishedUTC == default(DateTime))
+            if (command.PublishedUTC == default)
                 command.PublishedUTC = SessionAccessor.Now;
         }
     }

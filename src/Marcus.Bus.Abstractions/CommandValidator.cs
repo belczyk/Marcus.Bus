@@ -3,7 +3,7 @@ using Marcus.Validation;
 
 namespace Marcus.Bus.Abstractions
 {
-    public abstract class CommandValidator<T> : ValidatorBase, ICommandValidator<T> where T : Command
+    public abstract class CommandValidator<T> : Validator, ICommandValidator<T> where T : Command
     {
         public async Task<ValidationResult> Validate(T command)
         {
